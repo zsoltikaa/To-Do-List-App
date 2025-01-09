@@ -4,6 +4,9 @@ namespace to_do_list_app
     {
         public frmMain()
         {
+
+            this.StartPosition = FormStartPosition.CenterScreen;
+
             InitializeComponent();
 
         }
