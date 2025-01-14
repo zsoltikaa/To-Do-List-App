@@ -5,28 +5,45 @@ namespace to_do_list_app
     using System.IO;
     using System.Linq;
     using System.Windows.Forms;
+    using Application = Application;
     using Timer = System.Threading.Timer;
-    using System.Diagnostics;
 
-    public partial class frmMain : Form
+    public partial class FrmMain : Form
     {
-        private List<(string taskName, DateTime dueTime)> scheduledTasks = new List<(string, DateTime)>();
-        private string filePath = "tasks.txt";
-        private Timer taskTimer;
+        private readonly List<(string taskName, DateTime dueTime)> scheduledTasks = [];
+
+        private readonly List<string> motivationalQuotes =
+        [
+            "Believe in yourself and all that you are.",
+            "The only way to do great work is to love what you do.",
+            "You are capable of amazing things.",
+            "Your only limit is your mind.",
+            "Dream big, work hard, stay focused, and make it happen.",
+            "Success is not the key to happiness. Happiness is the key to success.",
+            "The future belongs to those who believe in the beauty of their dreams.",
+            "Believe you can and you're halfway there.",
+            "Don't watch the clock; do what it does. Keep going.",
+            "The best way to predict the future is to create it."
+        ];
+
+        private readonly string filePath = "tasks.txt";
         private int currentLevel = 1;
+
         private int currentPoints = 0;
+
         private int pointsToNextLevel = 20;
 
-        public frmMain()
+        public FrmMain()
         {
+
             this.StartPosition = FormStartPosition.CenterScreen;
             InitializeComponent();
             listTasks.DrawMode = DrawMode.OwnerDrawFixed;
             listTasks.DrawItem += ListTasks_DrawItem;
-            btnAdd.Click += new EventHandler(btnAddTaskClick);
-            btnRemove.Click += new EventHandler(btnRemoveTaskClick);
+            btnAdd.Click += new EventHandler(BtnAddTaskClick);
+            btnRemove.Click += new EventHandler(BtnRemoveTaskClick);
             btnExit.Click += BtnExitClick;
-            btnDone.Click += new EventHandler(btnDoneClick);
+            btnDone.Click += new EventHandler(BtnDoneClick);
             checkbLow.CheckedChanged += new EventHandler(CheckBoxCheckedChanged);
             checkbMedium.CheckedChanged += new EventHandler(CheckBoxCheckedChanged);
             checkbHigh.CheckedChanged += new EventHandler(CheckBoxCheckedChanged);
@@ -38,38 +55,36 @@ namespace to_do_list_app
                     comboBoxTime.Items.Add($"{hours:D2}:{minutes:D2}");
                 }
             }
+
             comboBoxTime.SelectedIndex = 0;
 
             LoadTasks();
-            lvlBar.Maximum = 100;
-            lvlBar.Value = 0;
+
         }
 
-        private void btnAddTaskClick(object sender, EventArgs e)
+        private void BtnAddTaskClick(object sender, EventArgs e)
         {
+
             string taskName = txbInput.Text;
+
             if (string.IsNullOrWhiteSpace(taskName))
             {
                 MessageBox.Show("Please provide a task!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            int points = 0;
             string priority = "";
             if (checkbLow.Checked)
             {
                 priority = "Low Priority";
-                points = 2;
             }
             else if (checkbMedium.Checked)
             {
                 priority = "Medium Priority";
-                points = 3;
             }
             else if (checkbHigh.Checked)
             {
                 priority = "High Priority";
-                points = 5;
             }
 
             if (string.IsNullOrEmpty(priority))
@@ -79,6 +94,7 @@ namespace to_do_list_app
             }
 
             string selectedTime = comboBoxTime.SelectedItem?.ToString();
+
             if (string.IsNullOrEmpty(selectedTime))
             {
                 MessageBox.Show("Please select a time for the task!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -95,10 +111,12 @@ namespace to_do_list_app
             checkbHigh.Checked = false;
 
             MessageBox.Show("Task added!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
         }
 
-        private void btnRemoveTaskClick(object sender, EventArgs e)
+        private void BtnRemoveTaskClick(object sender, EventArgs e)
         {
+
             if (listTasks.SelectedItem == null)
             {
                 MessageBox.Show("Please select a task to remove!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -109,10 +127,12 @@ namespace to_do_list_app
             SaveTasks();
 
             MessageBox.Show("Task removed!", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
         }
 
-        private void btnDoneClick(object sender, EventArgs e)
+        private void BtnDoneClick(object sender, EventArgs e)
         {
+
             if (listTasks.SelectedItem == null)
             {
                 MessageBox.Show("Please select a task to mark as completed!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -120,6 +140,7 @@ namespace to_do_list_app
             }
 
             string selectedTask = listTasks.SelectedItem.ToString();
+
             listTasks.Items.Remove(listTasks.SelectedItem);
 
             var taskToRemove = scheduledTasks.FirstOrDefault(t => $"{t.taskName} | {t.dueTime:HH:mm}" == selectedTask);
@@ -140,28 +161,43 @@ namespace to_do_list_app
             else if (priority == "Medium Priority") points = 3;
             else if (priority == "High Priority") points = 5;
 
-            UpdateProgressBar(points);
+            UpdatePoints(points);
+            UpdateLevelDisplay();
+
         }
 
-        private void UpdateProgressBar(int pointsToAdd)
+        private void UpdatePoints(int pointsToAdd)
         {
+
             currentPoints += pointsToAdd;
 
-            if (currentPoints >= pointsToNextLevel)
+            if (currentLevel < 5 && currentPoints >= pointsToNextLevel)
             {
                 currentLevel++;
                 pointsToNextLevel *= 2;
                 currentPoints = 0;
 
+                DisplayMotivationalQuote();
+
                 MessageBox.Show($"Congratulations! You've reached Level {currentLevel}!", "Level Up", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
-            int progress = (int)((double)currentPoints / pointsToNextLevel * 100);
-            lvlBar.Value = progress;
+        }
+
+        private void DisplayMotivationalQuote()
+        {
+
+            Random random = new();
+            int index = random.Next(motivationalQuotes.Count);
+            string quote = motivationalQuotes[index];
+
+            MessageBox.Show(quote, "Motivational Quote", MessageBoxButtons.OK);
+
         }
 
         private void ListTasks_DrawItem(object sender, DrawItemEventArgs e)
         {
+
             if (e.Index < 0) return;
 
             string itemText = listTasks.Items[e.Index].ToString();
@@ -189,10 +225,12 @@ namespace to_do_list_app
             }
 
             e.DrawFocusRectangle();
+
         }
 
         private void SortTasksByPriority()
         {
+
             var sortedTasks = listTasks.Items.Cast<string>()
                 .OrderByDescending(item =>
                 {
@@ -204,55 +242,12 @@ namespace to_do_list_app
                 .ToList();
 
             listTasks.Items.Clear();
+
             foreach (var task in sortedTasks)
             {
                 listTasks.Items.Add(task);
             }
-        }
 
-        private void ScheduleTask(string taskName, string timeString)
-        {
-            if (DateTime.TryParse(timeString, out DateTime taskTime))
-            {
-                DateTime now = DateTime.Now;
-                DateTime dueTime = new DateTime(now.Year, now.Month, now.Day, taskTime.Hour, taskTime.Minute, 0);
-
-                if (dueTime < now)
-                {
-                    dueTime = dueTime.AddDays(1);
-                }
-
-                scheduledTasks.Add((taskName, dueTime));
-
-                if (taskTimer == null)
-                {
-                    taskTimer = new Timer(CheckScheduledTasks, null, 0, 1000);
-                }
-            }
-        }
-
-        private void CheckScheduledTasks(object state)
-        {
-            DateTime now = DateTime.Now;
-
-            var expiredTasks = scheduledTasks.Where(t => t.dueTime <= now).ToList();
-
-            foreach (var task in expiredTasks)
-            {
-                var itemToRemove = listTasks.Items.Cast<string>().FirstOrDefault(i => i.Contains(task.taskName));
-                if (itemToRemove != null)
-                {
-                    listTasks.Items.Remove(itemToRemove);
-                }
-
-                scheduledTasks.Remove(task);
-            }
-
-            if (!scheduledTasks.Any())
-            {
-                taskTimer.Dispose();
-                taskTimer = null;
-            }
         }
 
         private void LoadTasks()
@@ -261,73 +256,49 @@ namespace to_do_list_app
             {
                 string[] lines = File.ReadAllLines(filePath);
 
-                if (lines.Length >= 3)
+                if (lines.Length >= 4)
                 {
-                    // Load the saved values for current level, points, and points to the next level
-                    if (int.TryParse(lines[0], out int level))
-                    {
+                    if (lines[1].StartsWith("Level: ") && int.TryParse(lines[1].AsSpan(7), out int level))
                         currentLevel = level;
-                    }
 
-                    if (int.TryParse(lines[1], out int points))
-                    {
+                    if (lines[2].StartsWith("Points: ") && int.TryParse(lines[2].AsSpan(9), out int points))
                         currentPoints = points;
-                    }
 
-                    if (int.TryParse(lines[2], out int nextLevelPoints))
+                    if (lines[3].StartsWith("Points needed for next level: "))
                     {
-                        pointsToNextLevel = nextLevelPoints;
+                        if (lines[3].Length > 35)
+                        {
+                            string pointsString = lines[3].Substring(35).Trim();
+                            if (int.TryParse(pointsString, out int nextLevelPoints))
+                            {
+                                pointsToNextLevel = nextLevelPoints;
+                            }
+                        }
                     }
 
-                    // Debug: Output the loaded values
-                    Debug.WriteLine($"Loaded Level: {currentLevel}");
-                    Debug.WriteLine($"Loaded Points: {currentPoints}");
-                    Debug.WriteLine($"Loaded Points to Next Level: {pointsToNextLevel}");
-
-                    // Ensure pointsToNextLevel is not zero or negative
-                    if (pointsToNextLevel <= 0)
-                    {
-                        pointsToNextLevel = 20; // Default value if loading is incorrect or zero
-                        Debug.WriteLine("pointsToNextLevel was zero or negative, resetting to 20.");
-                    }
-
-                    // Calculate progress and update the progress bar
-                    if (pointsToNextLevel > 0)
-                    {
-                        int progress = (int)((double)currentPoints / pointsToNextLevel * 100);
-                        progress = Math.Min(progress, 100); // Ensure we don't exceed 100%
-
-                        // Debug: Output the calculated progress bar value
-                        Debug.WriteLine($"Calculated Progress Bar Value: {progress}");
-
-                        lvlBar.Value = progress;
-                    }
+                    if (pointsToNextLevel <= 0) pointsToNextLevel = 20;
                 }
 
-                // Load the tasks starting from the 4th line in the file (skipping level and points)
-                for (int i = 3; i < lines.Length; i++)
+                for (int i = 4; i < lines.Length; i++)
                 {
-                    string task = lines[i];
-                    var parts = task.Split('|');
-                    if (parts.Length >= 3)
-                    {
-                        string taskName = parts[0].Trim();
-                        string priority = parts[1].Trim();
-                        string time = parts[2].Trim();
-                        listTasks.Items.Add(task);
-                    }
+                    listTasks.Items.Add(lines[i]);
                 }
             }
+
+            UpdateLevelDisplay();
+
         }
 
         private void SaveTasks()
         {
-            List<string> lines = new List<string>
-            {
-                currentLevel.ToString(),
-                currentPoints.ToString(),
-                pointsToNextLevel.ToString()
-            };
+
+            List<string> lines =
+            [
+                "=== Progress ===",
+                $"Level: {currentLevel}",
+                $"Points: {currentPoints}",
+                $"Points needed for next level: {pointsToNextLevel}",
+            ];
 
             foreach (var item in listTasks.Items)
             {
@@ -335,15 +306,29 @@ namespace to_do_list_app
             }
 
             File.WriteAllLines(filePath, lines);
+
         }
 
         private void BtnExitClick(object sender, EventArgs e)
         {
-            Application.Exit();
+
+            DialogResult result = MessageBox.Show(
+                caption: "Warning",
+                text: "Do you wish to exit the app?",
+                buttons: MessageBoxButtons.YesNo,
+                icon: MessageBoxIcon.Warning
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                Application.Exit();
+            }
+
         }
 
         private void CheckBoxCheckedChanged(object sender, EventArgs e)
         {
+
             var checkboxes = new[] { checkbLow, checkbMedium, checkbHigh };
 
             if (((CheckBox)sender).Checked)
@@ -353,7 +338,14 @@ namespace to_do_list_app
                     checkbox.Checked = false;
                 }
             }
+
         }
 
+        private void UpdateLevelDisplay()
+        {
+
+            lblLevel.Text = $"Level: {currentLevel} | Points: {currentPoints}/{pointsToNextLevel}";
+
+        }
     }
 }
